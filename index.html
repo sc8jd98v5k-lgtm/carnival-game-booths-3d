@@ -129,7 +129,8 @@ booth.add(frontWash);
 booth.add(frontWash.target);
 
 // Structure
-const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8e, roughness: 0.5, metalness: 0.4 });
+const frameMat = metalMat.clone();
+frameMat.color.set(0x9a9a9e);
 {
 // Floor
   const f = new THREE.Mesh(new THREE.BoxGeometry(BW, 0.12, BD), new THREE.MeshStandardMaterial({ color: 0x4a3a28, roughness: 0.85 }));
