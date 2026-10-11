@@ -24,7 +24,7 @@
 <body>
 <div id="info">
   <b>Game Booth — Blender Model</b><br>
-  48 objects · Real PBR materials<br>
+  69 objects · Real PBR materials<br>
   Drag to orbit · Scroll to zoom
 </div>
 <div id="loading">Loading 3D model...</div>
@@ -73,7 +73,7 @@ scene.add(ground);
 
 // Load GLB
 const loader = new GLTFLoader();
-loader.load('booth_full.glb',
+loader.load('booth_complete.glb',
   (gltf) => {
     document.getElementById('loading').style.display = 'none';
     const model = gltf.scene;
