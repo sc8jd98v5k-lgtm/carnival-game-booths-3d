@@ -135,14 +135,52 @@ const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8e, roughness: 0.
   const f = new THREE.Mesh(new THREE.BoxGeometry(BW, 0.12, BD), new THREE.MeshStandardMaterial({ color: 0x4a3a28, roughness: 0.85 }));
   f.position.y = 0.06; f.receiveShadow = true;
   booth.add(f);
-  // Back wall — white with red trim (like photo)
-  const bw = new THREE.Mesh(new THREE.BoxGeometry(BW, WALL_H, 0.15), new THREE.MeshStandardMaterial({ color: 0xe8e4dc, roughness: 0.7 }));
+  // Back wall — weathered painted panels (like photo)
+  const wallTexC = document.createElement('canvas');
+  wallTexC.width = 512; wallTexC.height = 256;
+  {
+    const x = wallTexC.getContext('2d');
+    x.fillStyle = '#ddd6c8'; x.fillRect(0, 0, 512, 256);
+    // Vertical panel seams
+    for (let p = 0; p <= 8; p++) {
+      x.fillStyle = 'rgba(0,0,0,0.25)';
+      x.fillRect(p*64 - 1, 0, 2, 256);
+      x.fillStyle = 'rgba(255,255,255,0.15)';
+      x.fillRect(p*64 + 1, 0, 1, 256);
+    }
+    // Paint wear and wood showing
+    for (let i = 0; i < 120; i++) {
+      x.fillStyle = `rgba(110,85,55,${rr(0.1,0.35)})`;
+      x.beginPath();
+      x.ellipse(rand()*512, rand()*256, rr(3,15), rr(2,8), rand()*3, 0, Math.PI*2);
+      x.fill();
+    }
+    // Scuffs and marks
+    for (let i = 0; i < 60; i++) {
+      x.strokeStyle = `rgba(60,50,40,${rr(0.1,0.3)})`;
+      x.lineWidth = rr(0.5,2);
+      const sx = rand()*512, sy = rand()*256;
+      x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx+rr(-30,30), sy+rr(-15,15)); x.stroke();
+    }
+    // Grime at bottom
+    const g = x.createLinearGradient(0, 180, 0, 256);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(40,30,20,0.3)');
+    x.fillStyle = g; x.fillRect(0, 0, 512, 256);
+  }
+  const wallTex = new THREE.CanvasTexture(wallTexC);
+  wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
+  wallTex.repeat.set(2, 1);
+  wallTex.colorSpace = THREE.SRGBColorSpace;
+  wallTex.anisotropy = 8;
+  const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.75, bumpMap: wallTex, bumpScale: 0.08 });
+  const bw = new THREE.Mesh(new THREE.BoxGeometry(BW, WALL_H, 0.15, 8, 4, 1), wallMat);
   bw.position.set(0, WALL_H/2 + 0.1, -BD/2);
   bw.receiveShadow = true;
   booth.add(bw);
   // Side walls
   for (const sx of [-1, 1]) {
-    const sw = new THREE.Mesh(new THREE.BoxGeometry(0.15, WALL_H, BD), new THREE.MeshStandardMaterial({ color: 0xd8d4cc, roughness: 0.7 }));
+    const sw = new THREE.Mesh(new THREE.BoxGeometry(0.15, WALL_H, BD, 1, 4, 8), wallMat);
     sw.position.set(sx*BW/2, WALL_H/2 + 0.1, 0);
     sw.castShadow = true;
     booth.add(sw);
