@@ -84,6 +84,31 @@ function perturb(geo, amp) {
   return geo;
 }
 
+// === REAL PHOTO TEXTURES (CC0 from Poly Haven) ===
+const texLoader = new THREE.TextureLoader();
+function loadPBR(base, repeatX = 1, repeatY = 1) {
+  const maps = {};
+  const diff = texLoader.load(`textures/${base}_diff.jpg`);
+  diff.colorSpace = THREE.SRGBColorSpace;
+  diff.wrapS = diff.wrapT = THREE.RepeatWrapping;
+  diff.repeat.set(repeatX, repeatY);
+  diff.anisotropy = 8;
+  maps.map = diff;
+  const rough = texLoader.load(`textures/${base}_rough.jpg`);
+  rough.wrapS = rough.wrapT = THREE.RepeatWrapping;
+  rough.repeat.set(repeatX, repeatY);
+  maps.roughnessMap = rough;
+  const nor = texLoader.load(`textures/${base}_nor_gl.jpg`);
+  nor.wrapS = nor.wrapT = THREE.RepeatWrapping;
+  nor.repeat.set(repeatX, repeatY);
+  maps.normalMap = nor;
+  return maps;
+}
+const woodTex = loadPBR('dark_wooden_planks', 2, 1);
+const metalTex = loadPBR('metal_plate', 1, 1);
+const woodMat = new THREE.MeshStandardMaterial({ ...woodTex, roughness: 1.0, metalness: 0.0 });
+const metalMat = new THREE.MeshStandardMaterial({ ...metalTex, roughness: 1.0, metalness: 0.6 });
+
 // ============================================================
 // MAIN BASKETBALL BOOTH
 // ============================================================
@@ -356,7 +381,7 @@ function makePrizeBall() {
 }
 // Shelves on back wall (right side)
 for (let s = 0; s < 4; s++) {
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.08, 0.5), new THREE.MeshStandardMaterial({ color: 0x6a4a2a, roughness: 0.8 }));
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.08, 0.5), woodMat);
   shelf.position.set(2.2, 1.35 + s*0.62, -BD/2 + 0.45);
   shelf.castShadow = true;
   booth.add(shelf);
@@ -551,7 +576,7 @@ const booth2 = new THREE.Group();
   booth2.add(sign);
   // Prize wall — plush toys on shelves
   for (let s = 0; s < 3; s++) {
-    const shelf = new THREE.Mesh(new THREE.BoxGeometry(w2 - 1, 0.08, 0.5), new THREE.MeshStandardMaterial({ color: 0x6a4a2a, roughness: 0.8 }));
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(w2 - 1, 0.08, 0.5), woodMat);
     shelf.position.set(0, 1.3 + s*0.65, -d2/2 + 0.45);
     booth2.add(shelf);
     for (let i = 0; i < 6; i++) {
