@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Booth — Blender 3D Model</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #0a0a0c; font-family: system-ui, sans-serif; }
+  #info {
+    position: absolute; top: 12px; left: 12px; color: #fff;
+    background: rgba(0,0,0,0.65); padding: 10px 14px; border-radius: 8px;
+    font-size: 13px; line-height: 1.5;
+  }
+  #info b { color: #ffd54a; }
+  #loading {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #fff; font-size: 18px;
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="info">
+  <b>Game Booth — Blender Model</b><br>
+  48 objects · Real PBR materials<br>
+  Drag to orbit · Scroll to zoom
+</div>
+<div id="loading">Loading 3D model...</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0c);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(8, 6, 12);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 2, 0);
+controls.update();
+
+// Lighting
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const sun = new THREE.DirectionalLight(0xfff4e0, 2.0);
+sun.position.set(10, 15, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x88aaff, 0.5);
+fill.position.set(-10, 8, -10);
+scene.add(fill);
+
+// Ground
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(30, 48),
+  new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.95 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Load GLB
+const loader = new GLTFLoader();
+loader.load('booth_full.glb',
+  (gltf) => {
+    document.getElementById('loading').style.display = 'none';
+    const model = gltf.scene;
+    model.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+    scene.add(model);
+    console.log('Model loaded:', model);
+  },
+  (xhr) => {
+    const pct = (xhr.loaded / xhr.total * 100).toFixed(0);
+    document.getElementById('loading').textContent = `Loading... ${pct}%`;
+  },
+  (err) => {
+    document.getElementById('loading').textContent = 'Error loading model';
+    console.error(err);
+  }
+);
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
