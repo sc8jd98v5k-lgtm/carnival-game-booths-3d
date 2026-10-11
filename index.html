@@ -190,20 +190,63 @@ const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8e, roughness: 0.
   roof.position.set(0, WALL_H + 0.35, 0);
   roof.castShadow = true;
   booth.add(roof);
-  // Striped awning edge (red/yellow/teal like photo)
+  // Striped awning — weathered canvas fabric
   const ac = document.createElement('canvas');
-  ac.width = 512; ac.height = 64;
+  ac.width = 1024; ac.height = 128;
   const ax = ac.getContext('2d');
-  const stripeCols = ['#c02828', '#e8b828', '#189090', '#e87818'];
+  const stripeCols = ['#a02020', '#c89828', '#147070', '#c05818'];
+  const asw = 1024/16;
   for (let s = 0; s < 16; s++) {
     ax.fillStyle = stripeCols[s % 4];
-    ax.fillRect(s*32, 0, 32, 64);
+    ax.fillRect(s*asw, 0, asw+1, 128);
+    // Canvas weave texture
+    for (let i = 0; i < 200; i++) {
+      ax.fillStyle = `rgba(0,0,0,${rr(0.03,0.08)})`;
+      ax.fillRect(s*asw + rand()*asw, rand()*128, 1, 1);
+    }
+    // Fabric folds (vertical shading)
+    const fold = ax.createLinearGradient(s*asw, 0, (s+1)*asw, 0);
+    fold.addColorStop(0, 'rgba(0,0,0,0.15)');
+    fold.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+    fold.addColorStop(1, 'rgba(0,0,0,0.15)');
+    ax.fillStyle = fold;
+    ax.fillRect(s*asw, 0, asw+1, 128);
+    // Sun fading
+    ax.fillStyle = `rgba(255,255,240,${rr(0.05,0.15)})`;
+    ax.fillRect(s*asw, 0, asw+1, 40);
+    // Dirt and wear
+    for (let i = 0; i < 15; i++) {
+      ax.fillStyle = `rgba(60,50,40,${rr(0.1,0.25)})`;
+      ax.beginPath();
+      ax.ellipse(s*asw + rand()*asw, 90 + rand()*38, rr(2,8), rr(1,4), 0, 0, Math.PI*2);
+      ax.fill();
+    }
   }
+  // Seam stitching between stripes
+  ax.strokeStyle = 'rgba(0,0,0,0.3)';
+  ax.lineWidth = 2;
+  ax.setLineDash([6, 4]);
+  for (let s = 0; s <= 16; s++) {
+    ax.beginPath(); ax.moveTo(s*asw, 0); ax.lineTo(s*asw, 128); ax.stroke();
+  }
+  ax.setLineDash([]);
   const atex = new THREE.CanvasTexture(ac);
   atex.wrapS = THREE.RepeatWrapping;
   atex.colorSpace = THREE.SRGBColorSpace;
-  const awn = new THREE.Mesh(new THREE.BoxGeometry(BW + 0.6, 0.5, 0.1), new THREE.MeshStandardMaterial({ map: atex, roughness: 0.8 }));
+  atex.anisotropy = 8;
+  const awn = new THREE.Mesh(
+    new THREE.BoxGeometry(BW + 0.6, 0.5, 0.1, 16, 2, 1),
+    new THREE.MeshStandardMaterial({ map: atex, roughness: 0.9, bumpMap: atex, bumpScale: 0.05 })
+  );
+  // Fabric wave
+  const ap = awn.geometry.attributes.position;
+  for (let i = 0; i < ap.count; i++) {
+    const px = ap.getX(i);
+    ap.setZ(i, ap.getZ(i) + Math.sin(px*2.5)*0.02);
+  }
+  awn.geometry.computeVertexNormals();
   awn.position.set(0, WALL_H + 0.05, BD/2 + 0.35);
+  awn.castShadow = true;
   booth.add(awn);
   // Corner posts
   for (const sx of [-1,1]) for (const sz of [-1,1]) {
