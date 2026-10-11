@@ -178,43 +178,75 @@ const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a8a8e, roughness: 0.
 // === BASKETBALL HOOPS with real 3D nets ===
 function makeHoop() {
   const g = new THREE.Group();
-  // Backboard — white with red border
-  const bb = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.65, 0.05), new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 0.5 }));
+  // Backboard — white with red border, realistic thickness and mounting
+  const bbMat = new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 0.35 });
+  const bb = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.65, 0.05, 4, 4, 1), bbMat);
+  // Slight wear on backboard
+  const bbp = bb.geometry.attributes.position;
+  for (let i = 0; i < bbp.count; i++) {
+    bbp.setZ(i, bbp.getZ(i) + (rand()-0.5)*0.004);
+  }
+  bb.geometry.computeVertexNormals();
   bb.castShadow = true;
   g.add(bb);
-  const border = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.69, 0.03), new THREE.MeshStandardMaterial({ color: 0xc02828, roughness: 0.6 }));
-  border.position.z = -0.015;
-  g.add(border);
-  // Rim — orange metal
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.022, 10, 24), new THREE.MeshStandardMaterial({ color: 0xe85818, roughness: 0.4, metalness: 0.5 }));
+  // Red border frame (not just a box behind)
+  const borderMat = new THREE.MeshStandardMaterial({ color: 0xb02020, roughness: 0.5 });
+  const borderT = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.045, 0.055), borderMat);
+  borderT.position.set(0, 0.302, 0); g.add(borderT);
+  const borderB = borderT.clone(); borderB.position.set(0, -0.302, 0); g.add(borderB);
+  const borderL = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.65, 0.055), borderMat);
+  borderL.position.set(-0.447, 0, 0); g.add(borderL);
+  const borderR = borderL.clone(); borderR.position.set(0.447, 0, 0); g.add(borderR);
+  // Mounting bracket — metal plate + bolts
+  const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.04), new THREE.MeshStandardMaterial({ color: 0x5a5a5e, roughness: 0.4, metalness: 0.7 }));
+  bracket.position.set(0, -0.05, -0.045);
+  g.add(bracket);
+  for (const [bx, by] of [[-0.1, 0.0], [0.1, 0.0], [-0.1, -0.1], [0.1, -0.1]]) {
+    const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 6), new THREE.MeshStandardMaterial({ color: 0x3a3a3e, roughness: 0.3, metalness: 0.8 }));
+    bolt.rotation.x = Math.PI/2;
+    bolt.position.set(bx, -0.05 + by, -0.07);
+    g.add(bolt);
+  }
+  // Rim — thicker, with mounting arm
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0xd84818, roughness: 0.35, metalness: 0.6 });
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.028, 12, 32), rimMat);
   rim.rotation.x = Math.PI/2;
-  rim.position.set(0, -0.12, 0.22);
+  rim.position.set(0, -0.12, 0.24);
   rim.castShadow = true;
   g.add(rim);
-  // Net — real 3D diamond pattern
-  const netMat = new THREE.MeshStandardMaterial({ color: 0xf5f2ea, roughness: 0.9 });
-  const netTopR = 0.18, netBotR = 0.11, netH = 0.32;
-  const levels = 4, segs = 8;
+  // Rim mounting arm
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.22), rimMat);
+  arm.position.set(0, -0.12, 0.08);
+  g.add(arm);
+  // Net — thicker strands, more levels, realistic
+  const netMat = new THREE.MeshStandardMaterial({ color: 0xe8e4d8, roughness: 0.95 });
+  const netTopR = 0.185, netBotR = 0.10, netH = 0.36;
+  const levels = 5, segs = 10;
   for (let l = 0; l < levels; l++) {
     const r0 = netTopR - (netTopR - netBotR) * (l/levels);
     const r1 = netTopR - (netTopR - netBotR) * ((l+1)/levels);
     const y0 = -0.12 - (l/levels)*netH, y1 = -0.12 - ((l+1)/levels)*netH;
     for (let s = 0; s < segs; s++) {
       const a0 = (s/segs)*Math.PI*2, a1 = ((s+0.5)/segs)*Math.PI*2, a2 = ((s+1)/segs)*Math.PI*2;
-      // Diamond strands
-      const p0 = new THREE.Vector3(Math.cos(a0)*r0, y0, 0.22 + Math.sin(a0)*r0);
-      const p1 = new THREE.Vector3(Math.cos(a1)*r1, y1, 0.22 + Math.sin(a1)*r1);
-      const p2 = new THREE.Vector3(Math.cos(a2)*r0, y0, 0.22 + Math.sin(a2)*r0);
+      const p0 = new THREE.Vector3(Math.cos(a0)*r0, y0, 0.24 + Math.sin(a0)*r0);
+      const p1 = new THREE.Vector3(Math.cos(a1)*r1, y1, 0.24 + Math.sin(a1)*r1);
+      const p2 = new THREE.Vector3(Math.cos(a2)*r0, y0, 0.24 + Math.sin(a2)*r0);
       for (const [pa, pb] of [[p0,p1],[p1,p2]]) {
         const dir = new THREE.Vector3().subVectors(pb, pa);
         const len = dir.length();
-        const strand = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, len, 4), netMat);
+        const strand = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, len, 5), netMat);
         strand.position.copy(pa).addScaledVector(dir, 0.5);
         strand.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+        strand.castShadow = true;
         g.add(strand);
       }
     }
   }
+  // Bottom loop
+  const loop = new THREE.Mesh(new THREE.TorusGeometry(netBotR, 0.008, 6, 16), netMat);
+  loop.rotation.x = Math.PI/2;
+  loop.position.set(0, -0.12 - netH, 0.24);
+  g.add(loop);
   return g;
 }
 for (let i = 0; i < 4; i++) {
